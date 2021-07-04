@@ -6,14 +6,21 @@ from nltk.stem import PorterStemmer
 
 import nltk
 import numpy as np
-import pandas as pd
 
 import os
-import string
-import copy
-import pickle
-import re
-import math
+import signal
+import sys
+
+#######
+
+
+def signal_handler(sig, frame):
+    sys.exit(0)
+
+
+signal.signal(signal.SIGINT, signal_handler)
+
+#######
 
 ROOT_FOLDER = os.getcwd() + '/queries'
 CORPUS_SIZE = 0
@@ -24,10 +31,6 @@ processed_corpus = []
 
 nltk.download('stopwords', quiet=True)
 nltk.download('punkt', quiet=True)
-
-
-def log(param):
-    print(param)
 
 
 def init_corpus():
@@ -49,9 +52,7 @@ def remove_stopwords(query):
 
 
 def remove_useless_chars(query):
-    useless_chars = "!\"#$%&()*+-./:;<=>?@[\]^_`{|}~\n"
-
-    query = np.char.replace(query, "'", "")
+    useless_chars = "!\"#$%&()*+-./:;<=>?@[\]^_`'{|}~\n"
 
     for symbol in useless_chars:
         query = np.char.replace(query, symbol, '')
@@ -86,6 +87,7 @@ def extract_docs_terms(corpus):
         file = open(path, 'r', encoding="utf8", errors='ignore')
         text = file.read().strip()
         file.close()
+
         text = word_tokenize(preprocess(text))
         text += word_tokenize(preprocess(doc_name))
 
@@ -95,11 +97,11 @@ def extract_docs_terms(corpus):
 def words_document_frequency():
     for i in range(CORPUS_SIZE):
         vocab = processed_corpus[i]
-        for w in vocab:
+        for word in vocab:
             try:
-                DF[w] += 1
+                DF[word] += 1
             except:
-                DF[w] = 0
+                DF[word] = 1
 
 
 def get_word_df(word):
@@ -156,23 +158,24 @@ extract_docs_terms(corpus)
 words_document_frequency()
 get_vocab_tfidf()
 
-query = input("Search: ")
+while True:
+    query = input("Search: ")
 
-results = search_most_relevant_response(query)
+    results = search_most_relevant_response(query)
 
-print("\n\n")
-
-if len(results) > 0:
-    f = open(results[0][0], 'r')
-    best_result = f.read().strip()
-    f.close()
-
-    print("Best result:")
-    print(best_result)
     print("\n\n")
-    print("Top results:")
-    print(results)
-else:
-    print("No results found")
 
-print("\n\n")
+    if len(results) > 0:
+        f = open(results[0][0], 'r')
+        best_result = f.read().strip()
+        f.close()
+
+        print("Best result:")
+        print(best_result)
+        print("\n\n")
+        print("Top results:")
+        print(results)
+    else:
+        print("No results found.")
+
+    print("\n\n")

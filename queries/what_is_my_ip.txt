@@ -1,0 +1,1 @@
+run `curl ifconfig.me` in a terminal
