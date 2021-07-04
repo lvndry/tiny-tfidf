@@ -26,6 +26,10 @@ nltk.download('stopwords', quiet=True)
 nltk.download('punkt', quiet=True)
 
 
+def log(param):
+    print(param)
+
+
 def init_corpus():
     for filename in os.listdir(ROOT_FOLDER):
         full_path = os.path.join(ROOT_FOLDER+"/"+filename)
@@ -64,7 +68,7 @@ def stemming(query):
     return stemmed_text
 
 
-def preprocess(query: str):
+def preprocess(query: str):  # order matters
     query = query.lower()
     query = remove_stopwords(query)
     query = remove_useless_chars(query)
@@ -73,17 +77,23 @@ def preprocess(query: str):
     return query
 
 
+def extract_docs_terms(corpus):
+    for path, title in corpus:
+        file = open(path, 'r', encoding="utf8", errors='ignore')
+        text = file.read().strip()
+        file.close()
+        text = word_tokenize(preprocess(text))
+        processed_corpus.append(text)
+
+
 def words_document_frequency():
     for i in range(CORPUS_SIZE):
         vocab = processed_corpus[i]
         for w in vocab:
             try:
-                DF[w].add(i)
+                DF[w] += 1
             except:
-                DF[w] = {i}
-
-    for i in DF:
-        DF[i] = len(DF[i])
+                DF[w] = 0
 
 
 def get_word_df(word):
@@ -104,19 +114,9 @@ def get_vocab_tfidf():
         for word in np.unique(story_words):
             tf = counter[word]/words_count
             df = get_word_df(word)
-            idf = np.log((CORPUS_SIZE)/(df+1))
+            idf = np.log((CORPUS_SIZE+1)/(df+1))
 
             tf_idf[(i, word)] = tf*idf
-
-
-def extract_docs_terms(corpus):
-    sample = corpus[:CORPUS_SIZE]
-    for path, title in sample:
-        file = open(path, 'r', encoding="utf8", errors='ignore')
-        text = file.read().strip()
-        file.close()
-        text = word_tokenize(preprocess(text))
-        processed_corpus.append(text)
 
 
 def search_most_relevant_response(query):
@@ -145,13 +145,17 @@ def search_most_relevant_response(query):
         results.append((path, score))
 
     f = open(results[0][0], 'r')
-    result = f.read().strip()
+    best_result = f.read().strip()
     f.close()
-    print(result)
+    print(best_result)
+    print("\n\n")
+    print("Best results:")
+    print(results)
 
 
 init_corpus()
 extract_docs_terms(corpus)
 words_document_frequency()
 get_vocab_tfidf()
-search_most_relevant_response("how google works ?")
+
+search_most_relevant_response("how works seo ?")
