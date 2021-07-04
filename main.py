@@ -79,10 +79,16 @@ def preprocess(query: str):  # order matters
 
 def extract_docs_terms(corpus):
     for path, title in corpus:
+        doc_name = os.path.splitext(title)[0]
+        doc_name = doc_name.split("_")
+        doc_name = " ".join(doc_name)
+
         file = open(path, 'r', encoding="utf8", errors='ignore')
         text = file.read().strip()
         file.close()
         text = word_tokenize(preprocess(text))
+        text += word_tokenize(preprocess(doc_name))
+
         processed_corpus.append(text)
 
 
@@ -120,8 +126,6 @@ def get_vocab_tfidf():
 
 
 def search_most_relevant_response(query):
-    print("Query:", query)
-
     tokens = word_tokenize(preprocess(query))
 
     query_weights = {}
@@ -144,13 +148,7 @@ def search_most_relevant_response(query):
         path, _ = corpus[index]
         results.append((path, score))
 
-    f = open(results[0][0], 'r')
-    best_result = f.read().strip()
-    f.close()
-    print(best_result)
-    print("\n\n")
-    print("Best results:")
-    print(results)
+    return results
 
 
 init_corpus()
@@ -158,4 +156,23 @@ extract_docs_terms(corpus)
 words_document_frequency()
 get_vocab_tfidf()
 
-search_most_relevant_response("how works seo ?")
+query = input("Search: ")
+
+results = search_most_relevant_response(query)
+
+print("\n\n")
+
+if len(results) > 0:
+    f = open(results[0][0], 'r')
+    best_result = f.read().strip()
+    f.close()
+
+    print("Best result:")
+    print(best_result)
+    print("\n\n")
+    print("Top results:")
+    print(results)
+else:
+    print("No results found")
+
+print("\n\n")
