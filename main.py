@@ -16,27 +16,27 @@ import re
 import math
 
 ROOT_FOLDER = os.getcwd() + '/queries'
-SAMPLE_LENGTH = 0
+CORPUS_SIZE = 0
 DF = {}
 tf_idf = {}
 corpus = []
 processed_corpus = []
 
-nltk.download('stopwords')
-nltk.download('punkt')
+nltk.download('stopwords', quiet=True)
+nltk.download('punkt', quiet=True)
 
 
 def init_corpus():
     for filename in os.listdir(ROOT_FOLDER):
         full_path = os.path.join(ROOT_FOLDER+"/"+filename)
         corpus.append((full_path, filename))
-    global SAMPLE_LENGTH
-    SAMPLE_LENGTH = len(corpus)
+    global CORPUS_SIZE
+    CORPUS_SIZE = len(corpus)
 
 
-def remove_stopwords(story):
+def remove_stopwords(query):
     stopwords = nltkstopwords.words('english')
-    words = word_tokenize(story)
+    words = word_tokenize(query)
     new_text = ""
     for w in words:
         if w not in stopwords and len(w) > 1:
@@ -44,37 +44,37 @@ def remove_stopwords(story):
     return new_text
 
 
-def remove_useless_chars(story):
+def remove_useless_chars(query):
     useless_chars = "!\"#$%&()*+-./:;<=>?@[\]^_`{|}~\n"
 
-    story = np.char.replace(story, "'", "")
+    query = np.char.replace(query, "'", "")
 
     for symbol in useless_chars:
-        story = np.char.replace(story, symbol, '')
+        query = np.char.replace(query, symbol, '')
 
-    return str(story)
+    return str(query)
 
 
-def stemming(story):
+def stemming(query):
     stemmer = PorterStemmer()
-    tokens = word_tokenize(story)
+    tokens = word_tokenize(query)
     stemmed_text = ""
     for w in tokens:
         stemmed_text = stemmed_text + " " + stemmer.stem(w)
     return stemmed_text
 
 
-def preprocess(story: str):
-    story = story.lower()
-    story = remove_stopwords(story)
-    story = remove_useless_chars(story)
-    story = stemming(story)
+def preprocess(query: str):
+    query = query.lower()
+    query = remove_stopwords(query)
+    query = remove_useless_chars(query)
+    query = stemming(query)
 
-    return story
+    return query
 
 
 def words_document_frequency():
-    for i in range(SAMPLE_LENGTH):
+    for i in range(CORPUS_SIZE):
         vocab = processed_corpus[i]
         for w in vocab:
             try:
@@ -96,7 +96,7 @@ def get_word_df(word):
 
 
 def get_vocab_tfidf():
-    for i in range(SAMPLE_LENGTH):
+    for i in range(CORPUS_SIZE):
         story_words = processed_corpus[i]
         counter = Counter(story_words)
         words_count = len(story_words)
@@ -104,13 +104,13 @@ def get_vocab_tfidf():
         for word in np.unique(story_words):
             tf = counter[word]/words_count
             df = get_word_df(word)
-            idf = np.log((SAMPLE_LENGTH+1)/(df+1))
+            idf = np.log((CORPUS_SIZE)/(df+1))
 
             tf_idf[(i, word)] = tf*idf
 
 
 def extract_docs_terms(corpus):
-    sample = corpus[:SAMPLE_LENGTH]
+    sample = corpus[:CORPUS_SIZE]
     for path, title in sample:
         file = open(path, 'r', encoding="utf8", errors='ignore')
         text = file.read().strip()
@@ -119,11 +119,10 @@ def extract_docs_terms(corpus):
         processed_corpus.append(text)
 
 
-def search_most_relevant_story(query):
-    tokens = word_tokenize(preprocess(query))
-
+def search_most_relevant_response(query):
     print("Query:", query)
-    print(tokens)
+
+    tokens = word_tokenize(preprocess(query))
 
     query_weights = {}
 
@@ -140,18 +139,19 @@ def search_most_relevant_story(query):
 
     results = []
 
+    # Only select the 10 best queries
     for index, score in query_weights[:10]:
         path, _ = corpus[index]
         results.append((path, score))
 
     f = open(results[0][0], 'r')
-    text = f.read().strip()
+    result = f.read().strip()
     f.close()
-    print(text)
+    print(result)
 
 
 init_corpus()
 extract_docs_terms(corpus)
 words_document_frequency()
 get_vocab_tfidf()
-search_most_relevant_story("best subject")
+search_most_relevant_response("how google works ?")
