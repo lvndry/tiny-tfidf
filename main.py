@@ -41,6 +41,15 @@ def init_corpus():
     CORPUS_SIZE = len(corpus)
 
 
+def remove_single_letter_words(query):
+    words = word_tokenize(query)
+    new_text = ""
+    for w in words:
+        if len(w) > 1:
+            new_text = new_text + " " + w
+    return new_text
+
+
 def remove_stopwords(query):
     stopwords = nltkstopwords.words('english')
     words = word_tokenize(query)
@@ -74,6 +83,7 @@ def preprocess(query: str):  # order matters
     query = remove_stopwords(query)
     query = remove_useless_chars(query)
     query = stemming(query)
+    query = remove_single_letter_words(query)
 
     return query
 
@@ -122,31 +132,31 @@ def get_vocab_tfidf():
         for word in np.unique(story_words):
             tf = counter[word]/words_count
             df = get_word_df(word)
-            idf = np.log((CORPUS_SIZE+1)/(df+1))
-
+            # We add 1 to df to avoid division by 0
+            idf = np.log((CORPUS_SIZE)/(df+1))
             tf_idf[(i, word)] = tf*idf
 
 
 def search_most_relevant_response(query):
     tokens = word_tokenize(preprocess(query))
 
-    query_weights = {}
+    query_scores = {}
 
     for tfidf in tf_idf:
         doc_index, word = tfidf
         if word in tokens:
             try:
-                query_weights[doc_index] += tf_idf[tfidf]
+                query_scores[doc_index] += tf_idf[tfidf]
             except:
-                query_weights[doc_index] = tf_idf[tfidf]
+                query_scores[doc_index] = tf_idf[tfidf]
 
-    query_weights = sorted(query_weights.items(),
-                           key=lambda x: x[1], reverse=True)
+    query_scores = sorted(query_scores.items(),
+                          key=lambda x: x[1], reverse=True)
 
     results = []
 
     # Only select the 10 best queries
-    for index, score in query_weights[:10]:
+    for index, score in query_scores[:10]:
         path, _ = corpus[index]
         results.append((path, score))
 
