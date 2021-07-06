@@ -1,8 +1,8 @@
-from collections import Counter
-
 from nltk.corpus import stopwords as nltkstopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer
+
+from collections import Counter
 
 import nltk
 import numpy as np
@@ -138,13 +138,13 @@ def get_vocab_tfidf():
 
 
 def search_most_relevant_response(query):
-    tokens = word_tokenize(preprocess(query))
+    query_tokens = word_tokenize(preprocess(query))
 
     query_scores = {}
 
     for tfidf in tf_idf:
         doc_index, word = tfidf
-        if word in tokens:
+        if word in query_tokens:
             try:
                 query_scores[doc_index] += tf_idf[tfidf]
             except:
